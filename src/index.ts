@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { initializeDatabase } from './config/database';
 import authRoutes from './routes/auth';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { logger } from './config/logger';
 
 dotenv.config();
 
@@ -14,6 +16,12 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+
+// Logging middleware
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.url}`);
+  next();
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -27,16 +35,19 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/auth', authRoutes);
 
+// Error handlers (must be last)
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 // Initialize and start
 async function start() {
   try {
     await initializeDatabase();
     app.listen(PORT, () => {
-      console.log(`✅ Server running on http://localhost:${PORT}`);
-      console.log(`🔍 Health check: http://localhost:${PORT}/health`);
+      logger.info(`Server running on http://localhost:${PORT}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server:', error);
     process.exit(1);
   }
 }
