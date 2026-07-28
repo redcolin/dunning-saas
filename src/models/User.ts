@@ -16,18 +16,18 @@ export class User {
   @Column({ type: 'varchar', length: 255 })
   email: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, name: 'password_hash' })
   passwordHash: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  fullName: string;
+  @Column({ type: 'varchar', length: 255, nullable: true, name: 'full_name' })
+  fullName: string | null;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  companyName: string;
+  @Column({ type: 'varchar', length: 255, nullable: true, name: 'company_name' })
+  companyName: string | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

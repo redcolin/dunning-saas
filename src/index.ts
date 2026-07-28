@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { initializeDatabase } from './config/database';
+import authRoutes from './routes/auth';
 
 dotenv.config();
 
@@ -22,6 +23,9 @@ app.get('/health', (req, res) => {
     environment: process.env.NODE_ENV 
   });
 });
+
+// Routes
+app.use('/auth', authRoutes);
 
 // Initialize and start
 async function start() {

@@ -12,7 +12,7 @@ export const AppDataSource = new DataSource({
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
   entities: [path.join(__dirname, '../models/*.{ts,js}')],
-  migrations: [path.join(__dirname, '../../migrations/*.{ts,js}')],
+  migrations: [path.join(__dirname, '../migrations/*.{ts,js}')],
 });
 
 export async function initializeDatabase() {
