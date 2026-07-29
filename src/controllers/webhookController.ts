@@ -28,7 +28,7 @@ export class WebhookController {
 
       // Chargebee expects a 200 response
       res.status(200).json({ success: true });
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       logger.error('Webhook processing error:', error);
       res.status(200).json({ success: true }); // Still return 200 to prevent retries
     }
@@ -44,8 +44,6 @@ export class WebhookController {
         return;
       }
 
-      // Find chargebee account by site URL (from webhook, we need to infer)
-      // For now, we'll need to match by customer email
       const localCustomer = await customerRepo.findOne({
         where: { chargebeeCustomerId: customer.id },
       });
@@ -72,12 +70,12 @@ export class WebhookController {
       failedPayment.customerId = localCustomer.id;
       failedPayment.chargebeeAccountId = localCustomer.chargebeeAccountId;
       failedPayment.chargebeeInvoiceId = invoice.id;
-      failedPayment.amount = invoice.amount_due ? invoice.amount_due / 100 : 0; // Chargebee uses cents
+      failedPayment.amount = invoice.amount_due ? invoice.amount_due / 100 : 0;
       failedPayment.currency = invoice.currency_code || 'USD';
       failedPayment.declineCode = invoice.payment_method?.decline_error_code || 'unknown';
       failedPayment.declineReasonUser = this.getDeclineReason(invoice);
       failedPayment.failureType = this.getFailureType(invoice);
-      failedPayment.firstAttemptAt = new Date(invoice.date * 1000); // Chargebee uses Unix timestamp
+      failedPayment.firstAttemptAt = new Date(invoice.date * 1000);
       failedPayment.status = 'pending_retry';
       failedPayment.retryCount = 0;
 
@@ -91,16 +89,28 @@ export class WebhookController {
       logger.info(
         `Failed payment created: ${failedPayment.id} for customer ${localCustomer.chargebeeCustomerId}`
       );
-    } catch (error: any) {
+
+      // Send dunning email if hard decline
+      if (failedPayment.failureType === 'hard_decline') {
+        try {
+          const { dunningService } = await import('../services/dunningService.js');
+          await dunningService.sendHardDeclineDunning(failedPayment.id);
+        } catch (emailError: Error | unknown) {
+          const message = emailError instanceof Error ? emailError.message : String(emailError);
+          logger.error(`Failed to send dunning email: ${message}`);
+        }
+      }
+    } catch (error: Error | unknown) {
       logger.error('Error handling payment failed event:', error);
       throw error;
     }
   }
 
-  private getFailureType(invoice: any): 'soft_decline' | 'hard_decline' | 'data_quality' | 'unknown' {
+  private getFailureType(
+    invoice: any
+  ): 'soft_decline' | 'hard_decline' | 'data_quality' | 'unknown' {
     const code = invoice.payment_method?.decline_error_code || '';
 
-    // Soft declines (retriable)
     if (
       code.includes('insufficient_funds') ||
       code.includes('lost_card') ||
@@ -111,7 +121,6 @@ export class WebhookController {
       return 'soft_decline';
     }
 
-    // Hard declines (not retriable)
     if (
       code.includes('card_declined') ||
       code.includes('do_not_honor') ||
@@ -121,7 +130,6 @@ export class WebhookController {
       return 'hard_decline';
     }
 
-    // Data quality issues
     if (code.includes('invalid') || code.includes('processing_error')) {
       return 'data_quality';
     }

@@ -1,3 +1,4 @@
+import paymentPortalRoutes from './routes/paymentPortal';
 import metricsRoutes from './routes/metrics';
 import 'reflect-metadata';
 import express from 'express';
@@ -42,6 +43,7 @@ app.use('/auth', authRoutes);
 app.use('/chargebee', chargebeeRoutes);
 app.use('/webhooks', webhookRoutes);
 app.use('/metrics', metricsRoutes);
+app.use('/payment-portal', paymentPortalRoutes);
 
 // Error handlers (must be last)
 app.use(notFoundHandler);
