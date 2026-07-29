@@ -2,11 +2,13 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '../config/database';
 import { FailedPayment } from '../models/FailedPayment';
 import { Customer } from '../models/Customer';
+import { ChargebeeAccount } from '../models/ChargebeeAccount';
 import { ValidationError } from '../types/errors';
 import { logger } from '../config/logger';
 
 const failedPaymentRepo = AppDataSource.getRepository(FailedPayment);
 const customerRepo = AppDataSource.getRepository(Customer);
+const chargebeeRepo = AppDataSource.getRepository(ChargebeeAccount);
 
 export class PaymentPortalController {
   // Validate and get payment details from token
@@ -60,7 +62,7 @@ export class PaymentPortalController {
     }
   }
 
-  // Portal page (placeholder for frontend)
+  // Portal page (redirect to Chargebee)
   async getPortalPage(req: Request, res: Response) {
     try {
       const { token } = req.query;
@@ -81,20 +83,40 @@ export class PaymentPortalController {
         where: { id: paymentId },
       });
 
+      if (!payment) {
+        throw new ValidationError('Payment not found');
+      }
+
       const customer = await customerRepo.findOne({
         where: { id: customerId },
       });
 
-      if (!payment || !customer) {
-        throw new ValidationError('Payment or customer not found');
+      if (!customer) {
+        throw new ValidationError('Customer not found');
       }
 
-      // Return HTML page with payment update form
+      const account = await chargebeeRepo.findOne({
+        where: { id: payment.chargebeeAccountId },
+      });
+
+      if (!account) {
+        throw new ValidationError('Chargebee account not found');
+      }
+
+      // Generate Chargebee hosted payment page URL
+      // Note: cbp_xxxx is a placeholder - in production, get this from Chargebee account settings
+      const chargebeePaymentPageUrl = `https://${account.chargebeeSiteUrl}/pages/v3/cbp_xxxx?c_customer_id=${customer.chargebeeCustomerId}`;
+
+      logger.info(
+        `Generating payment portal for customer ${customerId}, payment ${paymentId}`
+      );
+
+      // Return HTML page with redirect
       const html = this.getPortalPageHTML(
         customer.customerName || 'Valued Customer',
         payment.amount.toString(),
         payment.currency,
-        token as string
+        chargebeePaymentPageUrl
       );
 
       res.setHeader('Content-Type', 'text/html');
@@ -102,17 +124,19 @@ export class PaymentPortalController {
     } catch (error: Error | unknown) {
       const message = error instanceof Error ? error.message : String(error);
       logger.error(`Portal page error: ${message}`);
-      res.status(400).send(`<html><body><h1>Error</h1><p>${message}</p></body></html>`);
+      res.status(400).send(
+        `<html><body><h1>Error</h1><p>${message}</p></body></html>`
+      );
     }
   }
 
-  // Handle payment update submission (placeholder)
+  // Handle payment update submission
   async updatePaymentMethod(req: Request, res: Response) {
     try {
-      const { token, chargebeeCustomerId } = req.body;
+      const { token } = req.body;
 
-      if (!token || !chargebeeCustomerId) {
-        throw new ValidationError('Token and Chargebee customer ID required');
+      if (!token || typeof token !== 'string') {
+        throw new ValidationError('Token required');
       }
 
       // Decode token
@@ -123,16 +147,42 @@ export class PaymentPortalController {
         throw new ValidationError('Invalid token format');
       }
 
+      const payment = await failedPaymentRepo.findOne({
+        where: { id: paymentId },
+      });
+
+      if (!payment) {
+        throw new ValidationError('Payment not found');
+      }
+
+      const customer = await customerRepo.findOne({
+        where: { id: customerId },
+      });
+
+      if (!customer) {
+        throw new ValidationError('Customer not found');
+      }
+
+      const account = await chargebeeRepo.findOne({
+        where: { id: payment.chargebeeAccountId },
+      });
+
+      if (!account) {
+        throw new ValidationError('Chargebee account not found');
+      }
+
+      // Generate Chargebee hosted payment page URL
+      const chargebeePaymentPageUrl = `https://${account.chargebeeSiteUrl}/pages/v3/cbp_xxxx?c_customer_id=${customer.chargebeeCustomerId}`;
+
       logger.info(
-        `Payment update requested for customer ${customerId}, payment ${paymentId}`
+        `Payment update requested for customer ${customerId}, payment ${paymentId}, redirecting to Chargebee`
       );
 
-      // TODO: Redirect to Chargebee's hosted payment page or integrate payment form
       res.json({
         success: true,
-        message:
-          'Payment update initiated. Redirecting to Chargebee payment portal...',
-        chargebeeCustomerId,
+        message: 'Redirecting to Chargebee payment portal...',
+        redirectUrl: chargebeePaymentPageUrl,
+        chargebeeCustomerId: customer.chargebeeCustomerId,
       });
     } catch (error: Error | unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -145,7 +195,7 @@ export class PaymentPortalController {
     customerName: string,
     amount: string,
     currency: string,
-    token: string
+    chargebeePaymentPageUrl: string
   ): string {
     return `
 <!DOCTYPE html>
@@ -162,12 +212,12 @@ export class PaymentPortalController {
       .amount-box { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
       .amount-box p { color: #666; }
       .amount { font-size: 24px; font-weight: bold; color: #333; }
-      .form-group { margin-bottom: 20px; }
-      label { display: block; margin-bottom: 8px; font-weight: 500; }
-      input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
-      button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-      button:hover { background: #0056b3; }
+      .button { display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; cursor: pointer; text-align: center; width: 100%; }
+      .button:hover { background: #0056b3; }
       .note { color: #666; font-size: 12px; margin-top: 10px; }
+      .loading { text-align: center; }
+      .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
   </head>
   <body>
@@ -182,39 +232,19 @@ export class PaymentPortalController {
       <p>Hi ${customerName},</p>
       <p>Please update your payment method to process your outstanding payment.</p>
 
-      <form>
-        <div class="form-group">
-          <label for="cardName">Cardholder Name</label>
-          <input type="text" id="cardName" name="cardName" required>
-        </div>
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Redirecting to secure payment portal...</p>
+      </div>
 
-        <div class="form-group">
-          <label for="cardNumber">Card Number</label>
-          <input type="text" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456" required>
-        </div>
+      <a href="${chargebeePaymentPageUrl}" class="button">Click here if not redirected automatically</a>
 
-        <div class="form-group">
-          <label for="expiry">Expiry Date</label>
-          <input type="text" id="expiry" name="expiry" placeholder="MM/YY" required>
-        </div>
-
-        <div class="form-group">
-          <label for="cvc">CVC</label>
-          <input type="text" id="cvc" name="cvc" placeholder="123" required>
-        </div>
-
-        <button type="submit">Update Payment Method</button>
-      </form>
-
-      <p class="note">Your payment information is secure and encrypted.</p>
+      <p class="note">You will be redirected to our secure payment processor (Chargebee).</p>
     </div>
 
     <script>
-      document.querySelector('form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        // TODO: Call /payment-portal/update endpoint with form data
-        alert('Payment update submitted. Redirecting to Chargebee...');
-      });
+      // Auto-redirect to Chargebee
+      window.location.href = '${chargebeePaymentPageUrl}';
     </script>
   </body>
 </html>

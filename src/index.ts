@@ -1,3 +1,4 @@
+import emailTrackingRoutes from './routes/emailTracking';
 import paymentPortalRoutes from './routes/paymentPortal';
 import metricsRoutes from './routes/metrics';
 import 'reflect-metadata';
@@ -44,6 +45,7 @@ app.use('/chargebee', chargebeeRoutes);
 app.use('/webhooks', webhookRoutes);
 app.use('/metrics', metricsRoutes);
 app.use('/payment-portal', paymentPortalRoutes);
+app.use('/email-tracking', emailTrackingRoutes);
 
 // Error handlers (must be last)
 app.use(notFoundHandler);
