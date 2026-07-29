@@ -1,3 +1,4 @@
+import metricsRoutes from './routes/metrics';
 import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
@@ -40,6 +41,7 @@ app.get('/health', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/chargebee', chargebeeRoutes);
 app.use('/webhooks', webhookRoutes);
+app.use('/metrics', metricsRoutes);
 
 // Error handlers (must be last)
 app.use(notFoundHandler);
