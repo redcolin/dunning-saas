@@ -3,6 +3,7 @@ import { AppDataSource } from '../config/database';
 import { ChargebeeAccount } from '../models/ChargebeeAccount';
 import { AuthRequest } from '../middleware/auth';
 import { ChargebeeService } from '../services/chargebeeService';
+import { syncService } from '../services/syncService';
 import { ValidationError, UnauthorizedError } from '../types/errors';
 import { logger } from '../config/logger';
 
@@ -108,6 +109,63 @@ export class ChargebeeController {
     logger.info(`Chargebee account disconnected for user ${req.userId}`);
 
     res.json({ message: 'Disconnected' });
+  }
+
+  async syncCustomers(req: AuthRequest, res: Response) {
+    if (!req.userId) {
+      throw new UnauthorizedError('Not authenticated');
+    }
+
+    const account = await chargebeeRepo.findOne({ where: { userId: req.userId } });
+
+    if (!account) {
+      throw new ValidationError('No connected account');
+    }
+
+    const count = await syncService.syncCustomers(account.id);
+
+    res.json({
+      message: 'Sync complete',
+      customersProcessed: count,
+    });
+  }
+
+  async syncPaymentMethods(req: AuthRequest, res: Response) {
+    if (!req.userId) {
+      throw new UnauthorizedError('Not authenticated');
+    }
+
+    const account = await chargebeeRepo.findOne({ where: { userId: req.userId } });
+
+    if (!account) {
+      throw new ValidationError('No connected account');
+    }
+
+    const count = await syncService.syncPaymentMethods(account.id);
+
+    res.json({
+      message: 'Sync complete',
+      paymentMethodsProcessed: count,
+    });
+  }
+
+  async syncAll(req: AuthRequest, res: Response) {
+    if (!req.userId) {
+      throw new UnauthorizedError('Not authenticated');
+    }
+
+    const account = await chargebeeRepo.findOne({ where: { userId: req.userId } });
+
+    if (!account) {
+      throw new ValidationError('No connected account');
+    }
+
+    const result = await syncService.syncAll(account.id);
+
+    res.json({
+      message: 'Full sync complete',
+      ...result,
+    });
   }
 }
 

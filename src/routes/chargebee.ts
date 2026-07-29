@@ -13,4 +13,9 @@ router.get('/account', asyncHandler((req, res) => chargebeeController.getConnect
 router.post('/test', asyncHandler((req, res) => chargebeeController.testConnection(req as any, res)));
 router.delete('/disconnect', asyncHandler((req, res) => chargebeeController.disconnectAccount(req as any, res)));
 
+// Sync endpoints
+router.post('/sync/customers', asyncHandler((req, res) => chargebeeController.syncCustomers(req as any, res)));
+router.post('/sync/payment-methods', asyncHandler((req, res) => chargebeeController.syncPaymentMethods(req as any, res)));
+router.post('/sync/all', asyncHandler((req, res) => chargebeeController.syncAll(req as any, res)));
+
 export default router;
