@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import './jobs/retryProcessor'; // Initialize retry processor
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
