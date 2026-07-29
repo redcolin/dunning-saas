@@ -113,6 +113,43 @@ export class ChargebeeService {
     }
   }
 
+  async retryPayment(invoiceId: string): Promise<{ success: boolean; result: string }> {
+    try {
+      const response = await this.api.post(`/invoices/${invoiceId}/retry`);
+
+      logger.info(`Retry attempt for invoice ${invoiceId}: success`);
+
+      return {
+        success: true,
+        result: 'success',
+      };
+    } catch (error: any) {
+      const errorCode = error.response?.status || 'unknown';
+      const errorMessage = error.response?.data?.error_code || error.message;
+
+      logger.error(
+        `Retry attempt for invoice ${invoiceId} failed: ${errorCode} - ${errorMessage}`
+      );
+
+      return {
+        success: false,
+        result: this.mapErrorToResult(errorCode),
+      };
+    }
+  }
+
+  private mapErrorToResult(errorCode: string): string {
+    const resultMap: { [key: string]: string } = {
+      card_declined: 'hard_decline',
+      insufficient_funds: 'soft_decline',
+      expired_card: 'soft_decline',
+      lost_card: 'soft_decline',
+      processing_error: 'gateway_error',
+    };
+
+    return resultMap[errorCode] || 'unknown';
+  }
+
   private encryptApiKey(key: string): string {
     // TODO: Implement encryption
     return key;

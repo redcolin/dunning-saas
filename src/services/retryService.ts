@@ -1,8 +1,11 @@
 import { AppDataSource } from '../config/database';
+import { ChargebeeAccount } from '../models/ChargebeeAccount';
 import { FailedPayment } from '../models/FailedPayment';
 import { RetryAttempt } from '../models/RetryAttempt';
+import { ChargebeeService } from './chargebeeService';
 import { logger } from '../config/logger';
 
+const chargebeeRepo = AppDataSource.getRepository(ChargebeeAccount);
 const failedPaymentRepo = AppDataSource.getRepository(FailedPayment);
 const retryAttemptRepo = AppDataSource.getRepository(RetryAttempt);
 
@@ -36,7 +39,9 @@ export class RetryService {
     // Schedule first retry attempt
     const delayMs = this.getRetryDelayMs(1);
     logger.info(
-      `Initial retry scheduled for payment ${failedPaymentId} after ${delayMs / 1000 / 60 / 60} hours`
+      `Initial retry scheduled for payment ${failedPaymentId} after ${
+        delayMs / 1000 / 60 / 60
+      } hours`
     );
   }
 
@@ -56,13 +61,26 @@ export class RetryService {
         throw new Error('Failed payment not found');
       }
 
+      // Get Chargebee account
+      const account = await chargebeeRepo.findOne({
+        where: { id: chargebeeAccountId },
+      });
+
+      if (!account) {
+        throw new Error('Chargebee account not found');
+      }
+
+      // Call Chargebee API to retry payment
+      const service = new ChargebeeService(account);
+      const retryResult = await service.retryPayment(chargebeeInvoiceId);
+
       // Create retry attempt record
       const attempt = new RetryAttempt();
       attempt.failedPaymentId = failedPaymentId;
       attempt.attemptNumber = attemptNumber;
       attempt.attemptTime = new Date();
       attempt.gatewayUsed = 'chargebee';
-      attempt.result = 'success'; // TODO: implement actual retry
+      attempt.result = retryResult.result as any;
 
       await retryAttemptRepo.save(attempt);
 
@@ -70,11 +88,22 @@ export class RetryService {
       payment.retryCount = attemptNumber;
       payment.lastRetryAt = new Date();
 
-      // Schedule next retry if this one succeeds (in real implementation)
-      // For now, just update the record
+      // If retry succeeded, mark as recovered
+      if (retryResult.success) {
+        payment.status = 'recovered';
+        payment.recoveredAt = new Date();
+        logger.info(`Payment ${failedPaymentId} recovered on attempt ${attemptNumber}`);
+      } else if (attemptNumber >= 3) {
+        // After 3 attempts, mark as unrecovered
+        payment.status = 'unrecovered';
+        logger.info(`Payment ${failedPaymentId} marked unrecovered after 3 attempts`);
+      }
+
       await failedPaymentRepo.save(payment);
 
-      logger.info(`Retry attempt ${attemptNumber} for payment ${failedPaymentId}`);
+      logger.info(
+        `Retry attempt ${attemptNumber} completed for payment ${failedPaymentId}: ${retryResult.result}`
+      );
     } catch (error) {
       logger.error(`Retry failed for payment ${failedPaymentId}:`, error);
       throw error;
@@ -99,6 +128,7 @@ export class RetryService {
       status: payment.status,
       retryCount: payment.retryCount,
       failureType: payment.failureType,
+      recoveredAt: payment.recoveredAt,
       attempts: payment.retryAttempts || [],
     };
   }
