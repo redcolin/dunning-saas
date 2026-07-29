@@ -8,6 +8,7 @@ import authRoutes from './routes/auth';
 import chargebeeRoutes from './routes/chargebee';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { logger } from './config/logger';
+import webhookRoutes from './routes/webhooks';
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/auth', authRoutes);
 app.use('/chargebee', chargebeeRoutes);
+app.use('/webhooks', webhookRoutes);
 
 // Error handlers (must be last)
 app.use(notFoundHandler);
