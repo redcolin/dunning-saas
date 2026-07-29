@@ -26,10 +26,10 @@ export class FailedPayment {
   @Column({ name: 'customer_id' })
   customerId: string;
 
-  @Column()
+  @Column({ name: 'chargebee_account_id' })
   chargebeeAccountId: string;
 
-  @Column()
+  @Column({ name: 'chargebee_invoice_id' })
   chargebeeInvoiceId: string;
 
   @Column({ type: 'numeric', precision: 12, scale: 2 })
@@ -38,34 +38,34 @@ export class FailedPayment {
   @Column({ length: 3 })
   currency: string;
 
-  @Column()
+  @Column({ name: 'decline_code' })
   declineCode: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true, name: 'decline_reason_user' })
   declineReasonUser: string | null;
 
-  @Column()
+  @Column({ name: 'failure_type' })
   failureType: 'soft_decline' | 'hard_decline' | 'data_quality' | 'unknown';
 
-  @Column()
+  @Column({ name: 'first_attempt_at' })
   firstAttemptAt: Date;
 
   @Column({ default: 'pending_retry' })
   status: 'pending_retry' | 'recovered' | 'unrecovered' | 'suspended';
 
-  @Column({ default: 0 })
+  @Column({ default: 0, name: 'retry_count' })
   retryCount: number;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true, name: 'last_retry_at' })
   lastRetryAt: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true, name: 'recovered_at' })
   recoveredAt: Date | null;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @OneToMany(() => RetryAttempt, attempt => attempt.failedPayment)

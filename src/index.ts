@@ -1,15 +1,15 @@
 import 'reflect-metadata';
-import './jobs/retryProcessor'; // Initialize retry processor
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { initializeDatabase } from './config/database';
+import { schedulerService } from './config/scheduler';
 import authRoutes from './routes/auth';
 import chargebeeRoutes from './routes/chargebee';
+import webhookRoutes from './routes/webhooks';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { logger } from './config/logger';
-import webhookRoutes from './routes/webhooks';
 
 dotenv.config();
 
@@ -49,6 +49,10 @@ app.use(errorHandler);
 async function start() {
   try {
     await initializeDatabase();
+    
+    // Start retry scheduler
+    schedulerService.start();
+
     app.listen(PORT, () => {
       logger.info(`Server running on http://localhost:${PORT}`);
     });

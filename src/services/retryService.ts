@@ -1,8 +1,6 @@
 import { AppDataSource } from '../config/database';
 import { FailedPayment } from '../models/FailedPayment';
 import { RetryAttempt } from '../models/RetryAttempt';
-import { ChargebeeService } from './chargebeeService';
-import { scheduleRetry } from '../config/queue';
 import { logger } from '../config/logger';
 
 const failedPaymentRepo = AppDataSource.getRepository(FailedPayment);
@@ -37,18 +35,12 @@ export class RetryService {
 
     // Schedule first retry attempt
     const delayMs = this.getRetryDelayMs(1);
-    await scheduleRetry(
-      failedPaymentId,
-      1,
-      payment.chargebeeAccountId,
-      payment.chargebeeInvoiceId,
-      delayMs
+    logger.info(
+      `Initial retry scheduled for payment ${failedPaymentId} after ${delayMs / 1000 / 60 / 60} hours`
     );
-
-    logger.info(`Initial retry scheduled for payment ${failedPaymentId}`);
   }
 
-  // Execute a retry attempt (called by job queue)
+  // Execute a retry attempt (called by scheduler)
   async executeRetry(
     failedPaymentId: string,
     attemptNumber: number,
@@ -95,7 +87,7 @@ export class RetryService {
       where: { id: failedPaymentId },
       relations: {
         retryAttempts: true,
-        },
+      },
     });
 
     if (!payment) {
