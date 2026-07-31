@@ -57,4 +57,10 @@ export class Customer {
 
   @OneToMany(() => FailedPayment, payment => payment.customer)
   failedPayments: FailedPayment[];
+
+  @Column({ default: false })
+  unsubscribed: boolean;
+
+  @Column({ type: 'text', nullable: true, name: 'unsubscribe_reason' })
+  unsubscribeReason: string | null;
 }

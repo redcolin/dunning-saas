@@ -1,3 +1,4 @@
+import sendgridWebhookRoutes from './routes/sendgridWebhook';
 import emailTrackingRoutes from './routes/emailTracking';
 import paymentPortalRoutes from './routes/paymentPortal';
 import metricsRoutes from './routes/metrics';
@@ -46,6 +47,7 @@ app.use('/webhooks', webhookRoutes);
 app.use('/metrics', metricsRoutes);
 app.use('/payment-portal', paymentPortalRoutes);
 app.use('/email-tracking', emailTrackingRoutes);
+app.use('/sendgrid', sendgridWebhookRoutes);
 
 // Error handlers (must be last)
 app.use(notFoundHandler);
