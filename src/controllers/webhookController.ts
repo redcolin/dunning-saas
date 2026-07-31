@@ -100,6 +100,17 @@ export class WebhookController {
           logger.error(`Failed to send dunning email: ${message}`);
         }
       }
+
+      // Send notification email if soft decline
+      if (failedPayment.failureType === 'soft_decline') {
+        try {
+          const { softDeclineEmailService } = await import('../services/softDeclineEmailService.js');
+          await softDeclineEmailService.sendSoftDeclineNotification(failedPayment.id);
+        } catch (emailError: Error | unknown) {
+          const message = emailError instanceof Error ? emailError.message : String(emailError);
+          logger.error(`Failed to send soft decline email: ${message}`);
+        }
+      }
     } catch (error: Error | unknown) {
       logger.error('Error handling payment failed event:', error);
       throw error;

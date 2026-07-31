@@ -87,6 +87,17 @@ export class SchedulerService {
 
       await failedPaymentRepo.save(payment);
 
+      // Send retry update email
+      if (attemptNumber >= 2) {
+        try {
+          const { softDeclineEmailService } = await import('./softDeclineEmailService.js');
+          await softDeclineEmailService.sendRetryUpdateEmail(payment.id, attemptNumber);
+        } catch (emailError: Error | unknown) {
+          const message = emailError instanceof Error ? emailError.message : String(emailError);
+          logger.error(`Failed to send retry update email: ${message}`);
+        }
+      }
+      
       logger.info(
         `Retry attempt ${attemptNumber} completed for payment ${payment.id}`
       );

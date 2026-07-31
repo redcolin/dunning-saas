@@ -174,6 +174,161 @@ export class EmailTemplateService {
       html,
     };
   }
+  // Soft decline first notification (immediate)
+  getSoftDeclineFirstNoticeEmail(
+    customerName: string,
+    customerEmail: string,
+    invoiceId: string,
+    amount: string,
+    currency: string
+  ): EmailTemplate {
+    const html = `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+      .content { margin: 20px 0; }
+      .footer { color: #666; font-size: 12px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Payment Temporary Issue</h1>
+      </div>
+
+      <div class="content">
+        <p>Hi ${customerName},</p>
+
+        <p>We attempted to process a payment of <strong>${currency} ${amount}</strong> (invoice ${invoiceId}), but it was temporarily declined.</p>
+
+        <p><strong>Good news:</strong> We will automatically retry this payment in 24 hours. Most temporary issues resolve on the next attempt.</p>
+
+        <p>If you'd like to resolve this immediately or have concerns about your payment method, please reply to this email.</p>
+
+        <p>Thanks,<br/>The ${this.companyName} Team</p>
+      </div>
+
+      <div class="footer">
+        <p>&copy; ${this.year} ${this.companyName}. All rights reserved.</p>
+        <p>This email was sent to ${customerEmail}</p>
+      </div>
+    </div>
+  </body>
+</html>`;
+
+    return {
+      subject: `Payment Retry Scheduled - ${currency} ${amount}`,
+      html,
+    };
+  }
+
+  // Soft decline retry 2 update (48 hours)
+  getSoftDeclineRetry2UpdateEmail(
+    customerName: string,
+    customerEmail: string,
+    invoiceId: string,
+    amount: string,
+    currency: string,
+    attempt: number
+  ): EmailTemplate {
+    const html = `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background-color: #e8f4f8; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #17a2b8; }
+      .content { margin: 20px 0; }
+      .footer { color: #666; font-size: 12px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Payment Retry - Attempt ${attempt}</h1>
+      </div>
+
+      <div class="content">
+        <p>Hi ${customerName},</p>
+
+        <p>We're retrying your payment of <strong>${currency} ${amount}</strong> (invoice ${invoiceId}).</p>
+
+        <p>We'll attempt this payment one more time in 24 hours. If you've updated your payment method, no further action is needed.</p>
+
+        <p>If you continue to experience issues, please contact us immediately.</p>
+
+        <p>Thanks,<br/>The ${this.companyName} Team</p>
+      </div>
+
+      <div class="footer">
+        <p>&copy; ${this.year} ${this.companyName}. All rights reserved.</p>
+        <p>This email was sent to ${customerEmail}</p>
+      </div>
+    </div>
+  </body>
+</html>`;
+
+    return {
+      subject: `Payment Retry Update - Attempt ${attempt}`,
+      html,
+    };
+  }
+
+  // Soft decline final attempt (72 hours)
+  getSoftDeclineFinalAttemptEmail(
+    customerName: string,
+    customerEmail: string,
+    invoiceId: string,
+    amount: string,
+    currency: string
+  ): EmailTemplate {
+    const html = `<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background-color: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107; }
+      .content { margin: 20px 0; }
+      .footer { color: #666; font-size: 12px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Final Payment Attempt</h1>
+      </div>
+
+      <div class="content">
+        <p>Hi ${customerName},</p>
+
+        <p>This is our final attempt to process your payment of <strong>${currency} ${amount}</strong> (invoice ${invoiceId}).</p>
+
+        <p><strong>If this attempt fails:</strong> Your account may be suspended. Please contact us immediately to resolve this issue.</p>
+
+        <p>We recommend updating your payment method to ensure successful processing.</p>
+
+        <p>Need help? Reply to this email and we'll assist you.</p>
+
+        <p>Thanks,<br/>The ${this.companyName} Team</p>
+      </div>
+
+      <div class="footer">
+        <p>&copy; ${this.year} ${this.companyName}. All rights reserved.</p>
+        <p>This email was sent to ${customerEmail}</p>
+      </div>
+    </div>
+  </body>
+</html>`;
+
+    return {
+      subject: `Final Payment Attempt - Action Required`,
+      html,
+    };
+  }
 }
 
 export const emailTemplateService = new EmailTemplateService();
