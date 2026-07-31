@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "emitDecoratorMetadata": true,
+    "types": ["node", "jest"],
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "target": "ES2020",
