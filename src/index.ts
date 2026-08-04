@@ -1,3 +1,4 @@
+import retryPolicyRoutes from './routes/retryPolicy';
 import emailAnalyticsRoutes from './routes/emailAnalytics';
 import sendgridWebhookRoutes from './routes/sendgridWebhook';
 import emailTrackingRoutes from './routes/emailTracking';
@@ -50,6 +51,7 @@ app.use('/payment-portal', paymentPortalRoutes);
 app.use('/email-tracking', emailTrackingRoutes);
 app.use('/sendgrid', sendgridWebhookRoutes);
 app.use('/email-analytics', emailAnalyticsRoutes);
+app.use('/retry-policy', retryPolicyRoutes);
 
 // Error handlers (must be last)
 app.use(notFoundHandler);
