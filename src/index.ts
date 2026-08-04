@@ -1,3 +1,4 @@
+import emailAnalyticsRoutes from './routes/emailAnalytics';
 import sendgridWebhookRoutes from './routes/sendgridWebhook';
 import emailTrackingRoutes from './routes/emailTracking';
 import paymentPortalRoutes from './routes/paymentPortal';
@@ -48,6 +49,7 @@ app.use('/metrics', metricsRoutes);
 app.use('/payment-portal', paymentPortalRoutes);
 app.use('/email-tracking', emailTrackingRoutes);
 app.use('/sendgrid', sendgridWebhookRoutes);
+app.use('/email-analytics', emailAnalyticsRoutes);
 
 // Error handlers (must be last)
 app.use(notFoundHandler);
