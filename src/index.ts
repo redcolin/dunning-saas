@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import customerPortalRoutes from './routes/customerPortal';
 import retryPolicyRoutes from './routes/retryPolicy';
 import emailAnalyticsRoutes from './routes/emailAnalytics';

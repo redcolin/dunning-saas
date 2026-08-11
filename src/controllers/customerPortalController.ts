@@ -22,7 +22,7 @@ export class CustomerPortalController {
       // Verify token format: base64(customerId:chargebeeAccountId)
       let decodedCustomerId: string;
       try {
-        const decoded = Buffer.from(tokenParam, 'base64').toString('utf-8');
+        const decoded = Buffer.from(tokenParam as string, 'base64').toString('utf-8');
         const parts = decoded.split(':');
         decodedCustomerId = parts[0];
 
@@ -78,7 +78,7 @@ export class CustomerPortalController {
 
   async getPaymentDetails(req: Request, res: Response) {
     try {
-      const { customerId, paymentId } = req.params;
+      const { customerId, paymentId } = req.params as { customerId: string; paymentId?: string };
       const tokenParam = Array.isArray(req.query.token) ? req.query.token[0] : (req.query.token as string);
 
       if (!tokenParam) {
@@ -87,7 +87,7 @@ export class CustomerPortalController {
 
       let decodedCustomerId: string;
       try {
-        const decoded = Buffer.from(tokenParam, 'base64').toString('utf-8');
+        const decoded = Buffer.from(tokenParam as string, 'base64').toString('utf-8');
         const parts = decoded.split(':');
         decodedCustomerId = parts[0];
 
