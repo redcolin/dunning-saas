@@ -20,18 +20,18 @@ export class CreateUsers1704067200000 implements MigrationInterface {
             isUnique: true,
           },
           {
-            name: 'passwordHash',
+            name: 'password_hash',
             type: 'varchar',
             length: '255',
           },
           {
-            name: 'fullName',
+            name: 'full_name',
             type: 'varchar',
             length: '255',
             isNullable: true,
           },
           {
-            name: 'companyName',
+            name: 'company_name',
             type: 'varchar',
             length: '255',
             isNullable: true,
