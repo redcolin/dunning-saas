@@ -20,15 +20,16 @@ export class EmailEvent {
   @JoinColumn({ name: 'customer_id' })
   customer: Customer;
 
-  @Column({ name: 'customer_id', nullable: true })
-  customerId: string | null;
+  @Column({ type: 'uuid', name: 'customer_id' })
+  customerId: string;
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   email: string;
 
   @Column({
     type: 'varchar',
     enum: ['bounce', 'complaint', 'unsubscribe', 'delivered', 'open', 'click'],
+    name: 'event_type',
   })
   eventType: 'bounce' | 'complaint' | 'unsubscribe' | 'delivered' | 'open' | 'click';
 
