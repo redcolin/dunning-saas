@@ -9,32 +9,32 @@ export class EmailAnalyticsService {
     try {
       const totalSent = await emailEventRepo
         .createQueryBuilder('email')
-        .where('email.eventType = :type', { type: 'delivered' })
+        .where('email."event_type" = :type', { type: 'delivered' })
         .getCount();
 
       const totalOpens = await emailEventRepo
         .createQueryBuilder('email')
-        .where('email.eventType = :type', { type: 'open' })
+        .where('email."event_type" = :type', { type: 'open' })
         .getCount();
 
       const totalClicks = await emailEventRepo
         .createQueryBuilder('email')
-        .where('email.eventType = :type', { type: 'click' })
+        .where('email."event_type" = :type', { type: 'click' })
         .getCount();
 
       const totalBounces = await emailEventRepo
         .createQueryBuilder('email')
-        .where('email.eventType = :type', { type: 'bounce' })
+        .where('email."event_type" = :type', { type: 'bounce' })
         .getCount();
 
       const totalComplaints = await emailEventRepo
         .createQueryBuilder('email')
-        .where('email.eventType = :type', { type: 'complaint' })
+        .where('email."event_type" = :type', { type: 'complaint' })
         .getCount();
 
       const totalUnsubscribes = await emailEventRepo
         .createQueryBuilder('email')
-        .where('email.eventType = :type', { type: 'unsubscribe' })
+        .where('email."event_type" = :type', { type: 'unsubscribe' })
         .getCount();
 
       const openRate = totalSent > 0 ? ((totalOpens / totalSent) * 100).toFixed(2) : '0.00';
@@ -64,9 +64,9 @@ export class EmailAnalyticsService {
     try {
       const metrics = await emailEventRepo
         .createQueryBuilder('email')
-        .select('email.eventType', 'eventType')
+        .select('email."event_type"', 'eventType')
         .addSelect('COUNT(*)', 'count')
-        .groupBy('email.eventType')
+        .groupBy('email."event_type"')
         .getRawMany();
 
       return metrics;
