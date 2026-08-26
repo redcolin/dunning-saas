@@ -7,36 +7,34 @@ const emailEventRepo = AppDataSource.getRepository(EmailEvent);
 export class EmailAnalyticsService {
   async getCampaignMetrics() {
     try {
-      const events = await emailEventRepo.find();
-
       const totalSent = await emailEventRepo
-        .createQueryBuilder()
-        .where('event_type = :type', { type: 'delivered' })
+        .createQueryBuilder('email')
+        .where('email.eventType = :type', { type: 'delivered' })
         .getCount();
 
       const totalOpens = await emailEventRepo
-        .createQueryBuilder()
-        .where('event_type = :type', { type: 'open' })
+        .createQueryBuilder('email')
+        .where('email.eventType = :type', { type: 'open' })
         .getCount();
 
       const totalClicks = await emailEventRepo
-        .createQueryBuilder()
-        .where('event_type = :type', { type: 'click' })
+        .createQueryBuilder('email')
+        .where('email.eventType = :type', { type: 'click' })
         .getCount();
 
       const totalBounces = await emailEventRepo
-        .createQueryBuilder()
-        .where('event_type = :type', { type: 'bounce' })
+        .createQueryBuilder('email')
+        .where('email.eventType = :type', { type: 'bounce' })
         .getCount();
 
       const totalComplaints = await emailEventRepo
-        .createQueryBuilder()
-        .where('event_type = :type', { type: 'complaint' })
+        .createQueryBuilder('email')
+        .where('email.eventType = :type', { type: 'complaint' })
         .getCount();
 
       const totalUnsubscribes = await emailEventRepo
-        .createQueryBuilder()
-        .where('event_type = :type', { type: 'unsubscribe' })
+        .createQueryBuilder('email')
+        .where('email.eventType = :type', { type: 'unsubscribe' })
         .getCount();
 
       const openRate = totalSent > 0 ? ((totalOpens / totalSent) * 100).toFixed(2) : '0.00';
@@ -65,10 +63,10 @@ export class EmailAnalyticsService {
   async getMetricsByEventType() {
     try {
       const metrics = await emailEventRepo
-        .createQueryBuilder()
-        .select('event_type', 'eventType')
+        .createQueryBuilder('email')
+        .select('email.eventType', 'eventType')
         .addSelect('COUNT(*)', 'count')
-        .groupBy('event_type')
+        .groupBy('email.eventType')
         .getRawMany();
 
       return metrics;
